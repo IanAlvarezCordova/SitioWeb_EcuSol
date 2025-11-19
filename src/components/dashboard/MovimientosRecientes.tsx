@@ -1,47 +1,48 @@
-// src/components/dashboard/MovimientosRecientes.tsx
-import { Movimiento } from '@/types';
+import { MovimientoDTO } from '@/types';
 import { formatCurrency } from '@/utils/formatters';
 import { Tarjeta } from '../common/Tarjeta';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 
 interface ItemMovimientoProps {
-  movimiento: Movimiento;
+  movimiento: MovimientoDTO;
 }
 
 const ItemMovimiento: React.FC<ItemMovimientoProps> = ({ movimiento }) => {
-  const esGasto = movimiento.monto < 0;
-  const colorMonto = esGasto ? 'text-red-600' : 'text-green-600';
-  const signo = esGasto ? '' : '+';
+  const esCredito = movimiento.tipo === 'C';
+  const colorMonto = esCredito ? 'text-green-600' : 'text-red-600';
+  const signo = esCredito ? '+' : '-';
 
   return (
-    <Tarjeta className="w-52 flex-shrink-0">
-      <p className="font-semibold truncate">{movimiento.descripcion}</p>
-      <p className="text-sm text-gray-500 mb-2">{movimiento.fecha}</p>
-      <p className={`text-lg font-bold ${colorMonto}`}>
+    <Tarjeta className="w-64 flex-shrink-0 border border-gray-100 mr-4">
+      <div className="flex justify-between items-start mb-2">
+         <span className={`p-1 rounded ${esCredito ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+            {esCredito ? <ArrowDownLeft size={16}/> : <ArrowUpRight size={16}/>}
+         </span>
+         <span className="text-xs text-gray-400">{new Date(movimiento.fecha).toLocaleDateString()}</span>
+      </div>
+      <p className="font-semibold text-sm text-gray-700 mb-1">{esCredito ? 'Depósito / Recibido' : 'Retiro / Enviado'}</p>
+      <p className={`text-xl font-bold ${colorMonto}`}>
         {signo}{formatCurrency(movimiento.monto)}
       </p>
-      <p className="text-xs text-gray-400 mt-1">{movimiento.categoria}</p>
     </Tarjeta>
   );
 };
 
-
 interface MovimientosRecientesProps {
-  movimientos: Movimiento[];
+  movimientos: MovimientoDTO[];
 }
 
 export const MovimientosRecientes: React.FC<MovimientosRecientesProps> = ({ movimientos }) => {
+  if (!movimientos || movimientos.length === 0) return null;
+
   return (
-    <div className="w-full">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Movimientos Recientes</h2>
-        <button className="text-ecusol-azul font-medium flex items-center">
-          Ver todos <ChevronRight size={20} />
-        </button>
+    <div className="w-full mt-8">
+      <div className="flex justify-between items-center mb-4 px-1">
+        <h2 className="text-lg font-bold text-gray-700">Actividad Reciente</h2>
       </div>
-      <div className="flex gap-4 overflow-x-auto pb-4">
-        {movimientos.map((mov) => (
-          <ItemMovimiento key={mov.id} movimiento={mov} />
+      <div className="flex overflow-x-auto pb-4 scrollbar-hide">
+        {movimientos.map((mov, i) => (
+          <ItemMovimiento key={i} movimiento={mov} />
         ))}
       </div>
     </div>

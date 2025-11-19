@@ -39,3 +39,7 @@ export interface TransferenciaRequest {
   monto: number;
   descripcion: string;
 }
+
+// --- ALIAS DE COMPATIBILIDAD (ESTO ARREGLA TUS ERRORES TS2305) ---
+export type Cuenta = CuentaDTO;
+export type Movimiento = MovimientoDTO;
