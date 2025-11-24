@@ -1,207 +1,176 @@
+//src/pages/cuentas/PaginaCuentas.tsx
 import { useEffect, useState } from 'react';
-import { bancaService } from '@/services/bancaService';
-import { CuentaDTO } from '@/types';
-import { formatCurrency } from '@/utils/formatters';
+// Rutas relativas para evitar errores de compilación
+import { bancaService } from '../../services/bancaService';
+import { CuentaDTO } from '../../types';
+import { formatCurrency } from '../../utils/formatters';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, ArrowRight, Loader2, PlusCircle, Lock, Building2, CheckCircle2 } from 'lucide-react';
-import { Boton } from '@/components/common/Boton';
+import { PlusCircle, Lock, Briefcase, ArrowRight, Loader2, ShieldCheck, CreditCard, AlertCircle } from 'lucide-react';
+import { Boton } from '../../components/common/Boton';
 import { toast } from 'react-hot-toast';
 
 const PaginaCuentas = () => {
   const [cuentas, setCuentas] = useState<CuentaDTO[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-
-  // ESTADOS PARA EL MODAL
+  const [creando, setCreando] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [procesando, setProcesando] = useState(false);
-  const [tipoCuenta, setTipoCuenta] = useState('1'); // 1 = Ahorros (Default)
+  const [tipoCuenta, setTipoCuenta] = useState('1'); 
 
-  // Verificar si ya tiene una pendiente para bloquear el botón principal
-  const tieneCuentaPendiente = cuentas.some(c => c.estado === 'INACTIVA');
+  const navigate = useNavigate();
 
   const cargarCuentas = async () => {
     try {
       const data = await bancaService.getMisCuentas();
       setCuentas(data);
-    } catch (error) {
-      console.error(error);
+    } catch (error) { console.error(error); } finally { setLoading(false); }
+  };
+
+  useEffect(() => { cargarCuentas(); }, []);
+
+  const handleConfirmarSolicitud = async () => {
+    setCreando(true);
+    try {
+      await bancaService.solicitarCuenta(parseInt(tipoCuenta));
+      toast.success("Solicitud enviada.");
+      setShowModal(false);
+      await cargarCuentas();
+    } catch (error: any) {
+      toast.error(error.message || "Error");
     } finally {
-      setLoading(false);
+      setCreando(false);
     }
   };
 
-  useEffect(() => {
-    cargarCuentas();
-  }, []);
-
-  // CONFIRMAR SOLICITUD
-  const handleConfirmarSolicitud = async () => {
-    setProcesando(true);
-    try {
-      await bancaService.solicitarCuenta(parseInt(tipoCuenta));
-      toast.success("¡Solicitud enviada correctamente!");
-      setShowModal(false); // Cerrar modal
-      await cargarCuentas(); // Recargar lista
-    } catch (error: any) {
-      toast.error(error.message || "Error al solicitar cuenta");
-    } finally {
-      setProcesando(false);
-    }
+  // HELPER: Detectar si está inactiva sin importar el género de la palabra
+  const verificarInactividad = (estado: string) => {
+      const e = estado.toUpperCase();
+      return e === 'INACTIVA' || e === 'INACTIVO' || e === 'BLOQUEADA' || e === 'BLOQUEADO';
   };
 
   if (loading) return <div className="flex justify-center p-10"><Loader2 className="animate-spin text-ecusol-primario" size={40} /></div>;
 
   return (
-    <div className="space-y-8 relative">
+    <div className="space-y-8">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-ecusol-primario">Mis Productos</h1>
-        
-        {/* BOTÓN FLOTANTE O SUPERIOR (Solo si tiene cuentas pero quiere otra) */}
-        {cuentas.length > 0 && (
-          <Boton 
-            onClick={() => setShowModal(true)}
-            disabled={tieneCuentaPendiente}
-            tamano="pequeno"
-            icono={<PlusCircle size={18}/>}
-            className={tieneCuentaPendiente ? 'opacity-50 cursor-not-allowed bg-gray-400' : ''}
-          >
-            {tieneCuentaPendiente ? 'Solicitud Pendiente' : 'Nueva Cuenta'}
-          </Boton>
-        )}
+        <Boton onClick={() => setShowModal(true)} tamano="pequeno" icono={<PlusCircle size={18}/>} variante="secundario">
+           Nueva Cuenta
+        </Boton>
       </div>
 
-      {/* === LISTA DE CUENTAS === */}
-      {cuentas.length === 0 ? (
-        // ESTADO VACÍO
-        <div className="bg-white rounded-2xl p-12 text-center border-2 border-dashed border-gray-200">
-          <div className="w-20 h-20 bg-blue-50 text-ecusol-primario rounded-full flex items-center justify-center mx-auto mb-6">
-            <Wallet size={40} />
-          </div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Aún no tienes cuentas activas</h2>
-          <p className="text-gray-500 max-w-md mx-auto mb-8">
-            Solicita hoy mismo tu cuenta en Banco EcuSol y empieza a manejar tus finanzas.
-          </p>
-          <Boton onClick={() => setShowModal(true)} icono={<PlusCircle />}>
-            Solicitar Apertura de Cuenta
-          </Boton>
-        </div>
-      ) : (
-        // GRILLA DE TARJETAS
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* GRID DE TARJETAS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
           {cuentas.map((cuenta) => {
-            const esInactiva = cuenta.estado === 'INACTIVA';
-            const esAhorros = cuenta.tipoCuentaId === 1; // Asumiendo ID 1
+            const esInactiva = verificarInactividad(cuenta.estado);
+            const esAhorros = cuenta.tipoCuentaId === 1;
+            
+            // ESTILOS DINÁMICOS MEJORADOS
+            let cardStyle = "";
+            let textStyle = "";
+            let iconColor = "";
+
+            if (esInactiva) {
+                // Estilo "Frozen" / Deshabilitado
+                cardStyle = "bg-slate-200 border-2 border-slate-300 cursor-not-allowed grayscale opacity-90";
+                textStyle = "text-slate-500";
+                iconColor = "text-slate-400";
+            } else if (esAhorros) {
+                // Estilo Ahorros (Azul Premium)
+                cardStyle = "bg-gradient-to-br from-blue-800 to-ecusol-primario text-white shadow-blue-200 hover:-translate-y-2 hover:shadow-2xl cursor-pointer";
+                textStyle = "text-white";
+                iconColor = "text-blue-200";
+            } else {
+                // Estilo Corriente (Black Executive)
+                cardStyle = "bg-gradient-to-br from-gray-900 to-black text-white shadow-gray-400 hover:-translate-y-2 hover:shadow-2xl cursor-pointer";
+                textStyle = "text-white";
+                iconColor = "text-gray-400";
+            }
             
             return (
               <div 
                 key={cuenta.cuentaId} 
-                className={`rounded-2xl p-6 shadow-md border transition-all relative overflow-hidden group
-                  ${esInactiva 
-                    ? 'bg-gray-50 border-gray-200' 
-                    : 'bg-white border-gray-100 hover:shadow-xl cursor-pointer'
-                  }`}
+                className={`relative rounded-2xl p-6 shadow-lg transition-all duration-300 overflow-hidden h-56 flex flex-col justify-between group ${cardStyle}`}
                 onClick={() => !esInactiva && navigate(`/app/cuentas/${cuenta.numeroCuenta}`)}
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`p-3 rounded-lg ${esInactiva ? 'bg-gray-200 text-gray-500' : 'bg-blue-50 text-ecusol-primario'}`}>
-                    {esInactiva ? <Lock size={24} /> : <Wallet size={24} />}
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${esInactiva ? 'bg-gray-200 text-gray-600' : 'bg-green-100 text-green-700'}`}>
-                    {cuenta.estado}
-                  </span>
+                {/* Fondo Decorativo */}
+                <div className="absolute right-0 top-0 opacity-10 transform translate-x-8 -translate-y-8 group-hover:scale-110 transition-transform duration-500">
+                    {esInactiva ? <Lock size={150} /> : (esAhorros ? <ShieldCheck size={180} /> : <Briefcase size={180} />)}
                 </div>
 
-                <h3 className="text-gray-500 text-sm font-medium uppercase">
-                  {esAhorros ? 'Cuenta de Ahorros' : 'Cuenta Corriente'}
-                </h3>
-                <p className="text-lg font-bold text-gray-800 tracking-wider mb-4">
-                  **** {cuenta.numeroCuenta.slice(-4)}
-                </p>
-
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <p className="text-xs text-gray-400 uppercase">Saldo Disponible</p>
-                  <p className={`text-3xl font-bold mt-1 ${esInactiva ? 'text-gray-400' : 'text-ecusol-primario'}`}>
-                    {esInactiva ? '$ --.--' : formatCurrency(cuenta.saldo)}
-                  </p>
-                </div>
-
-                {esInactiva && (
-                   <div className="mt-4 text-xs text-orange-600 font-medium bg-orange-50 p-2 rounded flex items-center gap-2">
-                     <Loader2 size={12} className="animate-spin"/> Esperando aprobación...
+                {/* Header */}
+                <div className="flex justify-between items-start z-10">
+                   <div className={`flex items-center gap-2 opacity-90 ${textStyle}`}>
+                      <CreditCard size={20} />
+                      <span className="font-bold uppercase text-xs tracking-widest">Banco EcuSol</span>
                    </div>
-                )}
+                   
+                   {/* Badge de Estado */}
+                   <span className={`text-[10px] px-2 py-1 rounded font-bold border uppercase tracking-wide ${
+                      esInactiva 
+                      ? 'bg-red-100 text-red-600 border-red-200' 
+                      : 'bg-white/10 text-white border-white/20 backdrop-blur-sm'
+                   }`}>
+                      {cuenta.estado}
+                   </span>
+                </div>
+
+                {/* Chip */}
+                <div className={`w-12 h-9 rounded-md my-2 z-10 shadow-sm flex items-center justify-center opacity-90 ${esInactiva ? 'bg-slate-400' : 'bg-gradient-to-r from-yellow-200 to-yellow-500'}`}>
+                    <div className="w-full h-[1px] bg-black/10"></div>
+                </div>
+
+                {/* Footer */}
+                <div className="z-10">
+                   <p className={`font-mono text-lg tracking-widest mb-1 opacity-90 shadow-black drop-shadow-sm ${textStyle}`}>
+                      **** **** **** {cuenta.numeroCuenta.slice(-4)}
+                   </p>
+                   
+                   <div className="flex justify-between items-end">
+                      <div>
+                          <p className={`text-[10px] uppercase opacity-70 ${textStyle}`}>
+                              {esInactiva ? 'Cuenta Bloqueada' : 'Saldo Disponible'}
+                          </p>
+                          <p className={`text-3xl font-bold ${textStyle}`}>
+                              {esInactiva ? '---' : formatCurrency(cuenta.saldo)}
+                          </p>
+                      </div>
+                      {!esInactiva ? (
+                          <ArrowRight className={`opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all duration-300 ${textStyle}`}/>
+                      ) : (
+                          <AlertCircle className="text-red-400 opacity-50" />
+                      )}
+                   </div>
+                </div>
               </div>
             );
           })}
-        </div>
-      )}
+      </div>
 
-      {/* === MODAL DE SOLICITUD === */}
+      {/* MODAL SOLICITUD */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
-            
             <div className="bg-ecusol-primario p-6 text-white text-center">
-              <Building2 className="mx-auto mb-2" size={40} />
-              <h3 className="text-xl font-bold">Solicitud de Producto</h3>
-              <p className="text-blue-200 text-sm">Banco EcuSol S.A.</p>
+              <h3 className="text-xl font-bold">Solicitar Producto</h3>
             </div>
-
-            <div className="p-8">
-              <p className="text-gray-600 text-sm mb-6 text-center">
-                Selecciona el tipo de cuenta que deseas abrir con nosotros. La solicitud pasará a revisión inmediata.
-              </p>
-
-              <div className="space-y-4 mb-8">
-                <label className="flex items-center p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-ecusol-primario transition-colors">
-                  <input 
-                    type="radio" 
-                    name="tipo" 
-                    value="1" 
-                    checked={tipoCuenta === '1'}
-                    onChange={(e) => setTipoCuenta(e.target.value)}
-                    className="w-5 h-5 text-ecusol-primario focus:ring-ecusol-primario"
-                  />
-                  <div className="ml-4">
-                    <span className="block font-bold text-gray-800">Cuenta de Ahorros</span>
-                    <span className="text-xs text-gray-500">Ideal para guardar tu dinero y ganar interés.</span>
-                  </div>
-                </label>
-
-                <label className="flex items-center p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-ecusol-primario transition-colors">
-                  <input 
-                    type="radio" 
-                    name="tipo" 
-                    value="2" 
-                    checked={tipoCuenta === '2'}
-                    onChange={(e) => setTipoCuenta(e.target.value)}
-                    className="w-5 h-5 text-ecusol-primario focus:ring-ecusol-primario"
-                  />
-                  <div className="ml-4">
-                    <span className="block font-bold text-gray-800">Cuenta Corriente</span>
-                    <span className="text-xs text-gray-500">Para manejo frecuente mediante cheques/tarjeta.</span>
-                  </div>
-                </label>
-              </div>
-
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50"
-                  disabled={procesando}
-                >
-                  Cancelar
-                </button>
-                <button 
-                  onClick={handleConfirmarSolicitud}
-                  disabled={procesando}
-                  className="flex-1 py-3 rounded-xl bg-ecusol-secundario text-white font-bold hover:bg-yellow-600 shadow-md flex justify-center items-center gap-2"
-                >
-                  {procesando ? <Loader2 className="animate-spin" size={20}/> : <CheckCircle2 size={20}/>}
-                  {procesando ? 'Enviando...' : 'Confirmar'}
-                </button>
-              </div>
+            <div className="p-8 space-y-4">
+                <p className="text-gray-600 text-sm text-center mb-4">Se creará una cuenta <strong>INACTIVA</strong> hasta su aprobación.</p>
+                <div className="space-y-3">
+                    <label className="flex items-center p-4 border rounded-xl cursor-pointer hover:border-ecusol-primario transition-colors">
+                        <input type="radio" name="tipo" value="1" checked={tipoCuenta === '1'} onChange={(e) => setTipoCuenta(e.target.value)} className="w-5 h-5 accent-ecusol-primario" />
+                        <div className="ml-4"><span className="block font-bold text-gray-800">Cuenta de Ahorros</span></div>
+                    </label>
+                    <label className="flex items-center p-4 border rounded-xl cursor-pointer hover:border-ecusol-primario transition-colors">
+                        <input type="radio" name="tipo" value="2" checked={tipoCuenta === '2'} onChange={(e) => setTipoCuenta(e.target.value)} className="w-5 h-5 accent-ecusol-primario" />
+                        <div className="ml-4"><span className="block font-bold text-gray-800">Cuenta Corriente</span></div>
+                    </label>
+                </div>
+                <div className="flex gap-3 mt-6">
+                    <button onClick={() => setShowModal(false)} className="flex-1 py-3 rounded-xl border font-bold text-gray-600">Cancelar</button>
+                    <button onClick={handleConfirmarSolicitud} disabled={creando} className="flex-1 py-3 rounded-xl bg-ecusol-secundario text-white font-bold hover:bg-yellow-600">
+                        {creando ? <Loader2 className="animate-spin mx-auto"/> : 'Solicitar'}
+                    </button>
+                </div>
             </div>
           </div>
         </div>

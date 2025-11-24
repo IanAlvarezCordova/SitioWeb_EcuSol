@@ -1,3 +1,4 @@
+//src/store/useAuthStore.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authService, RegisterData } from '@/services/authService';

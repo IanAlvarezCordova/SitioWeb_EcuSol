@@ -1,3 +1,4 @@
+//src/services/apiClient.ts
 import { useAuthStore } from "@/store/useAuthStore";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
@@ -18,9 +19,9 @@ export const apiClient = async <T>(endpoint: string, options: RequestInit = {}):
     });
 
     // Manejo especial para 401/403 (Token vencido o inválido)
-    if ((response.status === 401 || response.status === 403) && !endpoint.includes('/auth/login')) {
+    if ((response.status === 401 || response.status === 403) && !endpoint.includes('/auth/login/web')) {
       logout();
-      window.location.href = '/login';
+      window.location.href = '/login/web';
       throw new Error('Su sesión ha expirado.');
     }
 

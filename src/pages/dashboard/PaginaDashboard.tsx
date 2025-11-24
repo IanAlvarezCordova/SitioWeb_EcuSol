@@ -1,17 +1,19 @@
 // src/pages/dashboard/PaginaDashboard.tsx
+// src/pages/dashboard/PaginaDashboard.tsx
 import React from 'react';
-import useAuth from '@/hooks/useAuth';
+import { useAuthStore } from '@/store/useAuthStore'; // <--- CORRECCIÓN: Usar Store, no hook
 import { Tarjeta } from '@/components/common/Tarjeta';
 import { TrendingUp, CreditCard, Send } from 'lucide-react';
 
 const PaginaDashboard: React.FC = () => {
-  const { usuario } = useAuth();
+  // Obtenemos el usuario directamente del store
+  const { usuario } = useAuthStore();
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-ecusol-gris-oscuro">
-        Buenos Días, {usuario}
+        <h1 className="text-3xl font-bold text-ecusol-primario">
+          Buenos Días, {usuario || 'Cliente'}
         </h1>
         <p className="text-gray-600">Es un gusto tenerte hoy aquí.</p>
       </div>

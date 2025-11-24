@@ -1,3 +1,4 @@
+//src/components/common/Boton.tsx
 import React from 'react';
 
 type VarianteBoton = 'primario' | 'secundario' | 'peligro';

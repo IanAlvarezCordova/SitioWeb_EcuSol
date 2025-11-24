@@ -9,6 +9,7 @@ const enlacesPublicos = [
   { nombre: 'Principal', ruta: '/' },
   { nombre: 'Acerca de', ruta: '/acerca-de' },
   { nombre: 'Ayuda', ruta: '/ayuda' },
+  { nombre: 'Ubícanos', ruta: '/ubicanos' },
 ];
 
 export const HeaderPublico: React.FC = () => {

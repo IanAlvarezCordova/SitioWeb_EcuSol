@@ -1,30 +1,28 @@
-// Lo que devuelve el login
+//src/types/index.ts
+// src/types/index.ts
+
+// Auth
 export interface AuthResponse {
   token: string;
 }
 
-// Decodificamos esto del token (opcional) o lo guardamos
-export interface Usuario {
-  sub: string; // username
-  userId: number;
-  nombre?: string; // Lo llenaremos nosotros
-}
-
+// Modelos
 export interface CuentaDTO {
   cuentaId: number;
   numeroCuenta: string;
   saldo: number;
   estado: string;
   tipoCuentaId: number;
-  // Helper para el front
   tipoTexto?: string; 
 }
 
 export interface MovimientoDTO {
   fecha: string;
-  tipo: 'C' | 'D'; // C = Crédito, D = Débito
+  tipo: 'C' | 'D';
   monto: number;
   saldoNuevo: number;
+  // AGREGADO: Esto soluciona el error en PaginaDetalleCuenta
+  descripcion?: string; 
 }
 
 export interface DestinatarioDTO {
@@ -40,6 +38,6 @@ export interface TransferenciaRequest {
   descripcion: string;
 }
 
-// --- ALIAS DE COMPATIBILIDAD (ESTO ARREGLA TUS ERRORES TS2305) ---
+// Alias de compatibilidad
 export type Cuenta = CuentaDTO;
 export type Movimiento = MovimientoDTO;

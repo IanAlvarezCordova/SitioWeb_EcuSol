@@ -1,3 +1,4 @@
+//src/services/authService.ts
 import { apiClient } from "./apiClient";
 import { AuthResponse } from "@/types";
 
@@ -16,7 +17,7 @@ export interface RegisterData {
 export const authService = {
   login: async (usuario: string, clave: string) => {
     // ... (tu código de login que ya funcionaba)
-    return await apiClient<AuthResponse>('/auth/login', {
+    return await apiClient<AuthResponse>('/auth/login/web', {
       method: 'POST',
       body: JSON.stringify({ usuario, password: clave }),
     });
