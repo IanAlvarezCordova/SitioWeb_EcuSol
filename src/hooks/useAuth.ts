@@ -6,14 +6,12 @@ const useAuth = () => {
   const usuario = useAuthStore((state) => state.usuario);
   const login = useAuthStore((state) => state.login);
   const logout = useAuthStore((state) => state.logout);
-  const registrar = useAuthStore((state) => state.registrar);
 
   return {
     isAutenticado,
     usuario,
     login,
     logout,
-    registrar,
   };
 };
 

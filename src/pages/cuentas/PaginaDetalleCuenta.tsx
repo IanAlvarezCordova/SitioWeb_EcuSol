@@ -1,3 +1,4 @@
+//ubi: src/pages/cuentas/PaginaDetalleCuenta.tsx
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { bancaService } from '@/services/bancaService';

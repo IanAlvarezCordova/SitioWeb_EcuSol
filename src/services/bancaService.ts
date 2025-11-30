@@ -1,20 +1,25 @@
-//src/services/bancaService.ts
+// src/services/bancaService.ts
 import { apiClient } from "./apiClient";
 import { CuentaDTO, DestinatarioDTO, MovimientoDTO, TransferenciaRequest } from "@/types";
 
-// Datos de sucursales reales (Mockeados en el front para rapidez)
-const SUCURSALES_DATA = [
-  { id: 1, nombre: 'Matriz Norte - Iñaquito', direccion: 'Av. Amazonas N21-241 y Av. República', telefono: '02-2500-000', lat: -0.172547, lng: -78.484728 },
-  { id: 2, nombre: 'La Carolina', direccion: 'Av. Naciones Unidas y Japón', telefono: '02-2450-000', lat: -0.165821, lng: -78.478892 },
-  { id: 3, nombre: 'Tumbaco', direccion: 'Interoceánica Km 12', telefono: '02-2380-000', lat: -0.211567, lng: -78.405567 },
-  { id: 4, nombre: 'Tarqui - Guayaquil', direccion: 'Av. Francisco de Orellana', telefono: '04-2300-000', lat: -2.176389, lng: -79.899444 },
-  { id: 5, nombre: 'Malecón 2000', direccion: 'Malecón Simón Bolívar y Olmedo', telefono: '04-2510-000', lat: -2.194167, lng: -79.879722 },
-  { id: 6, nombre: 'Cuenca Centro', direccion: 'Calle Gran Colombia 10-45', telefono: '07-2840-000', lat: -2.900000, lng: -79.004722 },
-  { id: 7, nombre: 'Manta Playa Murciélago', direccion: 'Malecón de Manta', telefono: '05-2620-000', lat: -0.950000, lng: -80.733333 },
-  { id: 8, nombre: 'Calderón', direccion: 'Av. Carapungo y Río Coca', telefono: '02-2390-000', lat: -0.105000, lng: -78.455000 },
-  { id: 9, nombre: 'Conocoto', direccion: 'Av. Camilo Ponce Enríquez', telefono: '02-2870-000', lat: -0.294444, lng: -78.475000 },
-  { id: 10, nombre: 'Cumbayá', direccion: 'Vía Interoceánica y San Juan', telefono: '02-2890-000', lat: -0.200000, lng: -78.425000 },
-];
+// Tipos auxiliares si no están en types/index.ts
+export interface Beneficiario {
+  tipoCuenta: any;
+  id?: number;
+  numeroCuenta: string;
+  nombreTitular: string;
+  alias: string;
+  email?: string;
+}
+
+export interface Sucursal {
+  id: number;
+  nombre: string;
+  direccion: string;
+  telefono: string;
+  lat: number;
+  lng: number;
+}
 
 export const bancaService = {
   getMisCuentas: async () => {
@@ -42,8 +47,21 @@ export const bancaService = {
     });
   },
 
-  // Nuevo: Obtener sucursales (simulado)
+  // --- NUEVO: ENDPOINTS REALES ---
+  
+  getBeneficiarios: async () => {
+    return await apiClient<Beneficiario[]>('/web/beneficiarios');
+  },
+
+  guardarBeneficiario: async (data: Beneficiario) => {
+    return await apiClient<string>('/web/beneficiarios', {
+        method: 'POST',
+        body: JSON.stringify(data)
+    });
+  },
+
   getSucursales: async () => {
-    return SUCURSALES_DATA;
+    // Ya no es Mock, llama al backend
+    return await apiClient<Sucursal[]>('/web/sucursales'); 
   }
 };

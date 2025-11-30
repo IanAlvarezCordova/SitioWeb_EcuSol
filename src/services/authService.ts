@@ -1,8 +1,8 @@
-//src/services/authService.ts
+// src/services/authService.ts
 import { apiClient } from "./apiClient";
 import { AuthResponse } from "@/types";
 
-// Definimos qué espera el backend
+// Esto debe coincidir con RegisterRequest.java
 export interface RegisterData {
   cedula: string;
   nombres: string;
@@ -15,17 +15,17 @@ export interface RegisterData {
 }
 
 export const authService = {
+  // Login: POST /api/auth/login/web
   login: async (usuario: string, clave: string) => {
-    // ... (tu código de login que ya funcionaba)
     return await apiClient<AuthResponse>('/auth/login/web', {
       method: 'POST',
       body: JSON.stringify({ usuario, password: clave }),
     });
   },
 
-  // NUEVO: Registro real
+  // Registro: POST /api/auth/register
   register: async (datos: RegisterData) => {
-    // El backend devuelve un String (mensaje), usamos response.text() internamente en apiClient
+    // El backend devuelve un String simple ("Usuario registrado...")
     return await apiClient<string>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(datos),

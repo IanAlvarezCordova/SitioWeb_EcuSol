@@ -1,4 +1,4 @@
-//src/services/apiClient.ts
+//ubi:  src/services/apiClient.ts
 import { useAuthStore } from "@/store/useAuthStore";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
@@ -18,43 +18,36 @@ export const apiClient = async <T>(endpoint: string, options: RequestInit = {}):
       headers,
     });
 
-    // Manejo especial para 401/403 (Token vencido o inválido)
-    if ((response.status === 401 || response.status === 403) && !endpoint.includes('/auth/login/web')) {
-      logout();
-      window.location.href = '/login/web';
-      throw new Error('Su sesión ha expirado.');
+    // 1. LEER UNA SOLA VEZ COMO TEXTO
+    const textBody = await response.text();
+    
+    // 2. TRATAR DE PARSEAR A JSON
+    let data: any = null;
+    try {
+        if (textBody) data = JSON.parse(textBody);
+    } catch (e) {
+        // No es JSON, usamos el texto plano
+        data = textBody;
     }
 
-    // Si la respuesta NO es exitosa (ej: 400, 500)
+    // 3. SI HAY ERROR HTTP
     if (!response.ok) {
-      let errorMessage = 'Ocurrió un error inesperado';
-      
-      try {
-        // Intentamos leer el JSON que nos manda el GlobalExceptionHandler
-        const errorData = await response.json();
-        if (errorData.message) {
-          errorMessage = errorData.message;
-        }
-      } catch (e) {
-        // Si falla al leer JSON, intentamos leer como texto plano
-        const errorText = await response.text();
-        if (errorText) errorMessage = errorText;
+      if ((response.status === 401 || response.status === 403) && !endpoint.includes('/auth/login')) {
+        logout();
+        window.location.href = '/login';
+        throw new Error('Sesión expirada.');
       }
-
-      throw new Error(errorMessage);
+      
+      // Intentar extraer mensaje limpio
+      const msg = data?.message || data?.error || (typeof data === 'string' ? data : 'Error en el servidor');
+      throw new Error(msg);
     }
 
-    // Si todo salió bien (200 OK)
-    const contentType = response.headers.get("content-type");
-    if (contentType && contentType.indexOf("application/json") === -1) {
-      return (await response.text()) as unknown as T;
-    }
-
-    return response.json();
+    // 4. RETORNAR DATA
+    return data as T;
 
   } catch (error: any) {
-    // Este catch captura errores de red (servidor apagado, sin internet)
     console.error("API Error:", error);
-    throw error; // Relanzamos el error para que el componente lo muestre
+    throw error;
   }
 };

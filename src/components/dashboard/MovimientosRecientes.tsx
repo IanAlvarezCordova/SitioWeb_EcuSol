@@ -1,3 +1,4 @@
+//ubi: src/components/dashboard/MovimientosRecientes.tsx
 import { MovimientoDTO } from '@/types';
 import { formatCurrency } from '@/utils/formatters';
 import { Tarjeta } from '../common/Tarjeta';
